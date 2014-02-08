@@ -59,3 +59,5 @@ Test data as login info is from [PayPal API doc.](https://developer.paypal.com/w
         fmt.Printf("\n\nError:\n%+v\n\n", err)
     }
 ```
+#Author
+[Carlos Salguero](http://github.com/cfsalguero)
