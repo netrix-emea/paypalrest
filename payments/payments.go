@@ -118,11 +118,50 @@ type Amount struct {
     Details  AmountDetails `json:"details"`
 }
 
+type RelatedResource struct {
+    Sale struct {
+        Amount struct {
+            Currency string `json:"currency"`
+            Total    string `json:"total"`
+        }   `json:"amount"`
+        CreateTime time.Time `json:"create_time"`
+        Id         string    `json:"id"`
+        Links      []struct {
+            Href   string `json:"href"`
+            Method string `json:"method"`
+            Rel    string `json:"rel"`
+        }   `json:"links"`
+        ParentPayment string    `json:"parent_payment"`
+        State         string    `json:"state"`
+        UpdateTime    time.Time `json:"update_time"`
+    }   `json:"sale"`
+    Authorization struct {
+        Amount struct {
+            Currency string `json:"currency"`
+            Details  struct {
+                Subtotal string `json:"subtotal"`
+            }   `json:"details"`
+            Total string `json:"total"`
+        }   `json:"amount"`
+        CreateTime time.Time `json:"create_time"`
+        Id         string    `json:"id"`
+        Links      []struct {
+            Href   string `json:"href"`
+            Method string `json:"method"`
+            Rel    string `json:"rel"`
+        }   `json:"links"`
+        ParentPayment string    `json:"parent_payment"`
+        State         string    `json:"state"`
+        UpdateTime    time.Time `json:"update_time"`
+        ValidUntil    time.Time `json:"valid_until"`
+    }   `json:"authorization"`
+}
+
 type Transaction struct {
-    Amount           Amount      `json:"amount"`
-    Description      string      `json:"description"`
-    ItemList         ItemList    `json:"item_list,omitempty"`
-    RelatedResources []interface{} `json:"related_resources"`
+    Amount           Amount        `json:"amount"`
+    Description      string        `json:"description"`
+    ItemList         ItemList      `json:"item_list,omitempty"`
+    RelatedResources []RelatedResource `json:"related_resources"`
 }
 
 type TransactionRequest struct {
@@ -184,6 +223,6 @@ func create(intent string, auth *auth.PayPalAuth, credit_card CreditCard, transa
         } else {
             err = fmt.Errorf("API call status code: %d. Response: %s", statusCode, string(api_response))
         }
-    } 
+    }
     return
 }

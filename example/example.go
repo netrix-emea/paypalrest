@@ -2,8 +2,8 @@ package example
 
 import (
     "fmt"
-    "github.com/cfsalguero/paypalrest/auth"
-    "github.com/cfsalguero/paypalrest/payments"
+    "github.com/edrans/paypalrest/auth"
+    "github.com/edrans/paypalrest/payments"
 )
 
 func example() {
