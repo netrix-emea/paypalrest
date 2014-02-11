@@ -79,21 +79,19 @@ func GetAuthorization(auth *auth.PayPalAuth, id string) (response AuthorizationR
 }
 
 func CaptureAuthorization(auth *auth.PayPalAuth, id string, currency string, total float64, is_final_capture bool) (response *CaptureResponse, err error) {
-    var outBody []byte
-    amount := CaptureAmount{Currency: currency, Total: fmt.Sprintf("%f", total)}
+    amount := CaptureAmount{Currency: currency, Total: fmt.Sprintf("%0.2f", total)}
     captureDetails := &CaptureDetails{Amount: amount, IsFinalCapture: is_final_capture}
-    url := fmt.Sprintf("%s%s%s/capture", auth.Endpoint, "/v1/payments/payment/authorization/", id)
-    outBody, err = json.Marshal(captureDetails)
+    url := fmt.Sprintf("%s%s%s/capture", auth.Endpoint, "/v1/payments/authorization/", id)
     if err == nil {
-        api_response, statusCode, err := common.DoRequest(auth, "GET", url, outBody)
+        api_response, statusCode, err := common.DoRequest(auth, "POST", url, captureDetails)
         if err == nil {
             if statusCode == 200 {
                 err = json.Unmarshal(api_response, &response)
             } else {
                 err = fmt.Errorf("API call status code %d, %s", statusCode, string(api_response))
             }
-        }
-    }
+        } 
+    } 
     return
 }
 
