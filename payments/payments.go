@@ -207,6 +207,8 @@ func AuthorizeWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, tran
 }
 
 func create(intent string, auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
+    var api_response []byte
+    var statusCode int
     r := CreateRequest{
         Intent: intent,
         Payer: PayerRequest{
@@ -216,7 +218,7 @@ func create(intent string, auth *auth.PayPalAuth, credit_card CreditCard, transa
         Transactions: []TransactionRequest{transaction},
     }
     url := fmt.Sprintf("%s%s", auth.Endpoint, "/v1/payments/payment")
-    api_response, statusCode, err := common.DoRequest(auth, "POST", url, r)
+    api_response, statusCode, err = common.DoRequest(auth, "POST", url, r)
     if err == nil {
         if statusCode == 201 || statusCode == 200 {
             err = json.Unmarshal(api_response, &response)
