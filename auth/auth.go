@@ -28,17 +28,32 @@ type PayPalAuth struct {
     Expires_on   time.Time
 }
 
+    
+var endpoints = map[string]string{"sandbox": "https://api.sandbox.paypal.com", "live": "https://api.paypal.com"}
+
+// Function to create auth from string (i.e. when token is recieved via get from paypal)
+func NewAuthFromToken(endpoint, token string) (response *PayPalAuth, err error) {
+    response = &PayPalAuth{
+        Token_type   : "Bearer",
+        Access_token : token,
+        Expires_on   : time.Now().UTC().Add(3600 * time.Second).UTC(),
+    }
+
+    err = response.SetEndpoint(endpoint)
+    return
+}
+
 func NewAuth(endpoint string, clientId string, clientSecret string) (response *PayPalAuth, err error) {
-    var ok bool
     var req *http.Request
     var resp *http.Response
-    endpoints := map[string]string{"sandbox": "https://api.sandbox.paypal.com", "live": "https://api.paypal.com"}
-    response = &PayPalAuth{}
-    response.ClientId = clientId
-    response.ClientSecret = clientSecret
-    response.Endpoint, ok = endpoints[endpoint]
-    if ok == false {
-        err = errors.New("Invalid connection type. It must be sandbox or live")
+
+    response = &PayPalAuth{
+        ClientId: clientId,
+        ClientSecret: clientSecret,
+    }
+
+    err = response.SetEndpoint(endpoint)
+    if err != nil {
         return
     }
 
@@ -46,27 +61,30 @@ func NewAuth(endpoint string, clientId string, clientSecret string) (response *P
     values := url.Values{"grant_type": {"client_credentials"}}
 
     req, err = http.NewRequest("POST", response.Endpoint+"/v1/oauth2/token", strings.NewReader(values.Encode()))
+    if err != nil {
+        return
+    }
+
+    req.Header.Add("Accept", "application/json")
+    req.Header.Add("Accept-Language", "en_US")
+    req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+    req.SetBasicAuth(clientId, clientSecret)
+    resp, err = client.Do(req)
     if err == nil {
-        req.Header.Add("Accept", "application/json")
-        req.Header.Add("Accept-Language", "en_US")
-        req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-        req.SetBasicAuth(clientId, clientSecret)
-        resp, err = client.Do(req)
-        if err == nil {
-            defer resp.Body.Close()
-            body, e := ioutil.ReadAll(resp.Body)
+        defer resp.Body.Close()
+        body, e := ioutil.ReadAll(resp.Body)
+        if e == nil {
+            e = json.Unmarshal(body, &response)
             if e == nil {
-                e = json.Unmarshal(body, &response)
-                if e == nil {
-                    response.Expires_on = time.Now().UTC().Add(time.Duration(response.Expires_in) * time.Second).UTC()
-                } else {
-                    err = errors.New(fmt.Sprintf("Cannot parse PayPal Auth response body: %v", err))
-                }
+                response.Expires_on = time.Now().UTC().Add(time.Duration(response.Expires_in) * time.Second).UTC()
             } else {
-                err = errors.New(fmt.Sprintf("Invalid PayPal API response: %v", err))
+                err = errors.New(fmt.Sprintf("Cannot parse PayPal Auth response body: %v", err))
             }
+        } else {
+            err = errors.New(fmt.Sprintf("Invalid PayPal API response: %v", err))
         }
     }
+
     return
 }
 
@@ -85,6 +103,13 @@ func (this *PayPalAuth) GetToken() (token string, err error) {
     return this.Access_token, err
 }
 
-func (this *PayPalAuth) SetEndpoint(endpoint string) {
-    this.Endpoint = endpoint
+func (this *PayPalAuth) SetEndpoint(endpoint string) (err error) {
+    e, ok := endpoints[endpoint]
+    if ok == false {
+        err = errors.New("Invalid connection type. It must be sandbox or live")
+        return
+    }
+
+    this.Endpoint = e
+    return
 }
