@@ -2,8 +2,8 @@ package example
 
 import (
     "fmt"
-    "github.com/edrans/paypalrest/auth"
-    "github.com/edrans/paypalrest/payments"
+    "github.com/wedancedalot/paypalrest/auth"
+    "github.com/wedancedalot/paypalrest/payments"
 )
 
 func payWithCC() {

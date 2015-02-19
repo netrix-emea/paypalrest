@@ -3,8 +3,8 @@ package payments
 import (
     "encoding/json"
     "fmt"
-    "github.com/edrans/paypalrest/auth"
-    "github.com/edrans/paypalrest/common"
+    "github.com/wedancedalot/paypalrest/auth"
+    "github.com/wedancedalot/paypalrest/common"
     "time"
 )
 

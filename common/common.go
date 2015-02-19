@@ -4,7 +4,7 @@ import (
     "encoding/json"
     "errors"
     "fmt"
-    "github.com/edrans/paypalrest/auth"
+    "github.com/wedancedalot/paypalrest/auth"
     "io/ioutil"
     "net/http"
     "strings"
