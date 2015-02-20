@@ -3,8 +3,8 @@ package payments
 import (
     "encoding/json"
     "fmt"
-    "github.com/edrans/paypalrest/auth"
-    "github.com/edrans/paypalrest/common"
+    "github.com/wedancedalot/paypalrest/auth"
+    "github.com/wedancedalot/paypalrest/common"
     "time"
 )
 
@@ -109,7 +109,7 @@ type Item struct {
 
 type ItemList struct {
     Items           []Item          `json:"items,omitempty"`
-    ShippingAddress ShippingAddress `json:"shipping_address,omitempty"`
+    ShippingAddress *ShippingAddress `json:"shipping_address,omitempty"`
 }
 
 type Amount struct {
@@ -165,8 +165,9 @@ type Transaction struct {
 }
 
 type TransactionRequest struct {
-    Amount      Amount `json:"amount"`
-    Description string `json:"description"`
+    Amount      Amount      `json:"amount"`
+    Description string      `json:"description"`
+    ItemList    ItemList    `json:"item_list,omitempty"`
 }
 type RedirectURL struct {
     ReturnURL string `json:"return_url"`
@@ -180,10 +181,11 @@ type HATEOAS_Link struct {
 }
 
 type CreateRequest struct {
-    Intent       string               `json:"intent"`
-    Payer        PayerRequest         `json:"payer"`
-    Transactions []TransactionRequest `json:"transactions"`
-    RedirectURLs []RedirectURL        `json:"redirect_urls"`
+    Intent       string                `json:"intent,omitempty"`
+    Payer        *PayerRequest         `json:"payer,omitempty"`
+    Transactions []TransactionRequest  `json:"transactions,omitempty"`
+    RedirectURLs *RedirectURL          `json:"redirect_urls,omitempty"`
+    PayerId      string                `json:"payer_id,omitempty"`
 }
 
 type CreateResponse struct {
@@ -199,25 +201,67 @@ type CreateResponse struct {
 }
 
 func PayWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
-    return create("sale", auth, credit_card, transaction)
-}
-
-func AuthorizeWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
-    return create("authorize", auth, credit_card, transaction)
-}
-
-func create(intent string, auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
-    var api_response []byte
-    var statusCode int
     r := CreateRequest{
-        Intent: intent,
-        Payer: PayerRequest{
+        Intent: "sale",
+        Payer: &PayerRequest{
             PaymentMethod:      "credit_card",
             FundingInstruments: []FundingInstrumentRequest{{CreditCard: credit_card}},
         },
         Transactions: []TransactionRequest{transaction},
     }
-    url := fmt.Sprintf("%s%s", auth.Endpoint, "/v1/payments/payment")
+
+    return create(auth, "/v1/payments/payment", r)
+}
+
+func AuthorizeWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
+    r := CreateRequest{
+        Intent: "authorize",
+        Payer: &PayerRequest{
+            PaymentMethod:      "credit_card",
+            FundingInstruments: []FundingInstrumentRequest{{CreditCard: credit_card}},
+        },
+        Transactions: []TransactionRequest{transaction},
+    }
+
+    return create(auth, "/v1/payments/payment", r)
+}
+
+func PayWithPaypal(auth *auth.PayPalAuth, redirect_url RedirectURL, transaction TransactionRequest) (response CreateResponse, err error) {
+    r := CreateRequest{
+        Intent: "sale",
+        Payer: &PayerRequest{
+            PaymentMethod: "paypal",
+        },
+        Transactions: []TransactionRequest{transaction},
+        RedirectURLs: &redirect_url,
+    }
+
+    return create(auth, "/v1/payments/payment", r)
+}
+
+func ExecutePaypalPayment(auth *auth.PayPalAuth, paymentId, payerId string) (response CreateResponse, err error) {
+    r := CreateRequest{
+        PayerId: payerId,
+    }
+
+    return create(auth, "/v1/payments/payment/" + paymentId + "/execute/", r)
+}
+
+func (response *CreateResponse) CheckoutUrl() (url string) {
+    for _, link := range response.Links {
+        if link.Rel == "approval_url" {
+            url = link.Href
+        }
+    }    
+    return 
+}
+
+func create(auth *auth.PayPalAuth, url string, r CreateRequest) (response CreateResponse, err error) {
+    var api_response []byte
+    var statusCode int
+    
+    url = fmt.Sprintf("%s%s", auth.Endpoint, url)
+
     api_response, statusCode, err = common.DoRequest(auth, "POST", url, r)
     if err == nil {
         if statusCode == 201 || statusCode == 200 {

@@ -3,8 +3,8 @@ package authorizations
 import (
     "fmt"
     "encoding/json"
-    "github.com/edrans/paypalrest/auth"
-    "github.com/edrans/paypalrest/common"
+    "github.com/wedancedalot/paypalrest/auth"
+    "github.com/wedancedalot/paypalrest/common"
 )
 
 type AmountDetails struct {
