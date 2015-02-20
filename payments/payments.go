@@ -109,7 +109,7 @@ type Item struct {
 
 type ItemList struct {
     Items           []Item          `json:"items,omitempty"`
-//  ShippingAddress ShippingAddress `json:"shipping_address,omitempty"`
+    ShippingAddress *ShippingAddress `json:"shipping_address,omitempty"`
 }
 
 type Amount struct {
@@ -181,11 +181,11 @@ type HATEOAS_Link struct {
 }
 
 type CreateRequest struct {
-    Intent       string               `json:"intent,omitempty"`
-    Payer        PayerRequest         `json:"payer,omitempty"`
-    Transactions []TransactionRequest `json:"transactions,omitempty"`
-    RedirectURLs RedirectURL          `json:"redirect_urls,omitempty"`
-    PayerId      string               `json:"payer_id,omitempty"`
+    Intent       string                `json:"intent,omitempty"`
+    Payer        *PayerRequest         `json:"payer,omitempty"`
+    Transactions []TransactionRequest  `json:"transactions,omitempty"`
+    RedirectURLs *RedirectURL          `json:"redirect_urls,omitempty"`
+    PayerId      string                `json:"payer_id,omitempty"`
 }
 
 type CreateResponse struct {
@@ -203,7 +203,7 @@ type CreateResponse struct {
 func PayWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
     r := CreateRequest{
         Intent: "sale",
-        Payer: PayerRequest{
+        Payer: &PayerRequest{
             PaymentMethod:      "credit_card",
             FundingInstruments: []FundingInstrumentRequest{{CreditCard: credit_card}},
         },
@@ -216,7 +216,7 @@ func PayWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, transactio
 func AuthorizeWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, transaction TransactionRequest) (response CreateResponse, err error) {
     r := CreateRequest{
         Intent: "authorize",
-        Payer: PayerRequest{
+        Payer: &PayerRequest{
             PaymentMethod:      "credit_card",
             FundingInstruments: []FundingInstrumentRequest{{CreditCard: credit_card}},
         },
@@ -229,11 +229,11 @@ func AuthorizeWithCreditCard(auth *auth.PayPalAuth, credit_card CreditCard, tran
 func PayWithPaypal(auth *auth.PayPalAuth, redirect_url RedirectURL, transaction TransactionRequest) (response CreateResponse, err error) {
     r := CreateRequest{
         Intent: "sale",
-        Payer: PayerRequest{
+        Payer: &PayerRequest{
             PaymentMethod: "paypal",
         },
         Transactions: []TransactionRequest{transaction},
-        RedirectURLs: redirect_url,
+        RedirectURLs: &redirect_url,
     }
 
     return create(auth, "/v1/payments/payment", r)
