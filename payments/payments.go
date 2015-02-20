@@ -247,6 +247,15 @@ func ExecutePaypalPayment(auth *auth.PayPalAuth, paymentId, payerId string) (res
     return create(auth, "/v1/payments/payment/" + paymentId + "/execute/", r)
 }
 
+func (response *CreateResponse) CheckoutUrl() (url string) {
+    for _, link := range response.Links {
+        if link.Rel == "approval_url" {
+            url = link.Href
+        }
+    }    
+    return 
+}
+
 func create(auth *auth.PayPalAuth, url string, r CreateRequest) (response CreateResponse, err error) {
     var api_response []byte
     var statusCode int
